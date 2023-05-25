@@ -23,6 +23,12 @@ public class UriToFileMethodCallHandler implements MethodChannel.MethodCallHandl
                 uriToFile.fromUri(new MethodResultWrapper(result), uriString);
                 break;
             }
+            case "copyFileToSdcard": {
+                String uriString = call.argument("uriString");
+                String filePath = call.argument("filePath");
+                uriToFile.copyFileToSdcard(new MethodResultWrapper(result), filePath ,uriString);
+                break;
+            }
             default: {
                 result.notImplemented();
                 break;

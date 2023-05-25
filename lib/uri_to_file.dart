@@ -81,3 +81,34 @@ Future<File> toFile(String uriString) async {
 
   return File.fromUri(uri);
 }
+
+Future<bool> copyFileToSdcard(String filePath,String uriString) async {
+  Uri uri = Uri.parse(uriString);
+  if (Platform.isAndroid && uri.isScheme('content')) {
+    try {
+      bool? _result = await _methodChannel
+          .invokeMethod("copyFileToSdcard", {"uriString": uriString,"filePath":filePath});
+      return _result??false;
+    } on PlatformException catch (e) {
+      switch (e.code) {
+        case _URI_NOT_SUPPORTED:
+          {
+            throw UnsupportedError(
+                'Cannot extract a file path from a ${uri.scheme} URI');
+          }
+        case _IO_EXCEPTION:
+          {
+            throw UriIOException(e.message);
+          }
+        default:
+          {
+            rethrow;
+          }
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  return false;
+}

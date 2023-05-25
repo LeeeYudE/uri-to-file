@@ -1,12 +1,16 @@
 package in.lazymanstudios.uri_to_file.model;
 
+import android.app.RecoverableSecurityException;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
-
+import android.util.Log;
+import android.os.Build;
+import android.os.ParcelFileDescriptor;
+import android.os.CancellationSignal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -14,6 +18,8 @@ import java.nio.channels.FileChannel;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.net.URISyntaxException;
+
 
 import io.flutter.plugin.common.MethodChannel;
 
@@ -24,6 +30,83 @@ public class UriToFile {
     public UriToFile(Context context) {
         this.context = context;
         executorService = Executors.newFixedThreadPool(3);
+    }
+
+    public static String getPath(Context context, Uri uri) throws URISyntaxException {
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = {"data"};
+            Cursor cursor = null;
+
+            try {
+                cursor = context.getContentResolver().query(uri, projection, null, null, null);
+                int column_index = cursor.getColumnIndexOrThrow("_data");
+                if (cursor.moveToFirst()) {
+                    // Method returns here with null value
+                    return cursor.getString(column_index);
+                }
+            } catch (Exception e) {
+                // Eat it
+            }
+        }
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
+        return null;
+    }
+
+    public void copyFileToSdcard(MethodResultWrapper result,String filePath, String uriString) {
+
+
+        Uri uri = Uri.parse(uriString);
+
+        Log.d("charco","copyFileToSdcard : filePath = " + filePath +" uriString "+ uriString );
+        File _file = new File(filePath);
+        if(_file.exists()){
+            FileInputStream is = null;
+            FileOutputStream os = null;
+            try {
+
+                AssetFileDescriptor assetFileDescriptor = context.getContentResolver().openAssetFileDescriptor(uri, "r");
+
+
+                is = new FileInputStream(filePath);
+
+                os = (FileOutputStream) context.getContentResolver().openOutputStream(uri);
+
+                long uriLength = assetFileDescriptor.getLength();
+                long fileLength = filePath.length();
+
+                byte[] buffer;
+                StringBuffer sb = new StringBuffer();
+                for(int i = 0 ; i < uriLength ;i++){
+                    sb.append(' ');
+                }
+                buffer = sb.toString().getBytes();
+
+                os.write(buffer);
+                os.flush();
+
+                buffer = new byte[1024];
+                int length;
+                while ((length = is.read(buffer)) > 0) {
+                    os.write(buffer, 0, length);
+                }
+
+                os.flush();
+                os.close();
+                is.close();
+                Log.d("charco","copyFileToSdcard finish success "+ filePath + uriLength);
+                result.success(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+                result.error("", e.toString(), null);
+                Log.d("charco","copyFileToSdcard Exception "+e.toString());
+            }
+        }else {
+            result.error("-1", "file is not exists", null);
+            Log.d("charco","file is not exists ");
+        }
     }
 
     public void fromUri(MethodResultWrapper result, String uriString) {

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:uni_links/uni_links.dart';
@@ -69,15 +68,12 @@ class _MyAppState extends State<MyApp> {
         setState(() {});
       }
     } on UnsupportedError catch (e) {
-      Fluttertoast.showToast(msg: 'Uri is not supported');
       _hasError = true;
       print(e.message);
     } on IOException catch (e) {
-      Fluttertoast.showToast(msg: 'Something went wrong. Please try again');
       _hasError = true;
       print(e);
     } on Exception catch (e) {
-      Fluttertoast.showToast(msg: 'Something went wrong. Please try again');
       _hasError = true;
       print(e.toString());
     }
